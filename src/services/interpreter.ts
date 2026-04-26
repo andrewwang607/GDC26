@@ -8,6 +8,53 @@ import {
   SolutionsInterpretation
 } from "../types";
 
+const MODEL_CHAIN = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b"
+];
+
+interface GeminiCallResult {
+  text: string;
+  model: string;
+}
+
+function isQuotaError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { status?: number; message?: string };
+  if (e.status === 429) return true;
+  return typeof e.message === "string" && /429|quota|rate.?limit/i.test(e.message);
+}
+
+async function callGemini(
+  apiKey: string,
+  prompt: string,
+  temperature: number
+): Promise<GeminiCallResult> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  let lastError: unknown = null;
+  for (const modelName of MODEL_CHAIN) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { responseMimeType: "application/json", temperature }
+      });
+      const result = await model.generateContent(prompt);
+      return { text: result.response.text(), model: modelName };
+    } catch (err) {
+      lastError = err;
+      if (!isQuotaError(err)) {
+        throw err;
+      }
+    }
+  }
+  if (lastError instanceof Error) {
+    throw new Error(`All Gemini models exhausted quota: ${lastError.message}`);
+  }
+  throw new Error("All Gemini models exhausted quota");
+}
+
 function buildPrompt(
   alertLevel: AlertLevel,
   cropType: string,
@@ -66,33 +113,20 @@ export async function interpretAlert(
   rf: RainfallData | null,
   ndvi: NdviData | null
 ): Promise<AlertInterpretation> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
-  });
-
   const prompt = buildPrompt(alertLevel, cropType, language, sm, rf, ndvi);
 
+  let lastText = "";
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const { text } = await callGemini(apiKey, prompt, 0.2);
+    lastText = text;
     const parsed = parseStructuredResponse(text);
     if (parsed) {
       return parsed;
     }
-    if (attempt === 1) {
-      return {
-        english_summary: text,
-        local_language_guidance: "",
-        recommended_actions: [],
-        structured_response: false
-      };
-    }
   }
 
   return {
-    english_summary: "Interpreter unavailable.",
+    english_summary: lastText || "Interpreter unavailable.",
     local_language_guidance: "",
     recommended_actions: [],
     structured_response: false
@@ -167,36 +201,22 @@ export async function generateSolutions(
   rf: RainfallData | null,
   ndvi: NdviData | null
 ): Promise<SolutionsInterpretation> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    generationConfig: { responseMimeType: "application/json", temperature: 0.3 }
-  });
-
   const prompt = buildSolutionsPrompt(latitude, longitude, alertLevel, cropType, language, sm, rf, ndvi);
 
+  let lastText = "";
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const { text } = await callGemini(apiKey, prompt, 0.3);
+    lastText = text;
     const parsed = parseSolutionsResponse(text);
     if (parsed) {
       return parsed;
-    }
-    if (attempt === 1) {
-      return {
-        effects: [],
-        solutions: [],
-        english_summary: text,
-        local_language_summary: "",
-        structured_response: false
-      };
     }
   }
 
   return {
     effects: [],
     solutions: [],
-    english_summary: "Solutions generator unavailable.",
+    english_summary: lastText || "Solutions generator unavailable.",
     local_language_summary: "",
     structured_response: false
   };

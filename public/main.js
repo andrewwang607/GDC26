@@ -113,7 +113,6 @@ const elements = {
   advisorySummary: document.getElementById("advisory-summary"),
   advisoryActions: document.getElementById("advisory-actions"),
   advisoryMeta: document.getElementById("advisory-meta"),
-  rawJson: document.getElementById("raw-json"),
   langButtons: document.querySelectorAll(".lang-toggle"),
   quickLocate: document.getElementById("quick-locate"),
   scanBtn: document.getElementById("scan-hotspots"),
@@ -719,7 +718,6 @@ function renderResponse(response) {
 
   renderAdvisory(response, state.language);
   setActiveLanguageButton(state.language);
-  elements.rawJson.textContent = JSON.stringify(response, null, 2);
 
   if (elements.solutionsBody) {
     elements.solutionsBody.classList.add("hidden");

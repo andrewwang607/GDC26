@@ -132,9 +132,17 @@ router.post("/api/alert", async (req, res) => {
         rainfall,
         ndvi
       );
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn("interpreter failed:", err);
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      const isQuota = /429|quota|rate.?limit/i.test(message);
       alert = {
-        english_summary: "Advisory model temporarily unavailable.",
+        english_summary: isQuota
+          ? "Advisory model unavailable: Gemini API quota exceeded for this key. Enable billing on the Google AI Studio project, rotate the key, or wait for the daily quota to reset."
+          : "Advisory model temporarily unavailable.",
         local_language_guidance: "",
         recommended_actions: []
       };

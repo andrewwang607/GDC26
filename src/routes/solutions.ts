@@ -96,8 +96,12 @@ router.post("/api/solutions", async (req, res) => {
       // eslint-disable-next-line no-console
       console.warn("solutions generation failed:", err);
     }
+    const message = err instanceof Error ? err.message : String(err);
+    const isQuota = /429|quota|rate.?limit/i.test(message);
     return res.status(503).json({
-      error: "Solutions generator temporarily unavailable."
+      error: isQuota
+        ? "Gemini API quota exceeded for this key (free tier: limit 0 on the requested model). Enable billing on the Google AI Studio project, rotate the GEMINI_API_KEY, or wait for the daily quota to reset."
+        : "Solutions generator temporarily unavailable."
     });
   }
 
