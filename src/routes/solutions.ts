@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { SUPPORTED_LANGUAGES } from "../config/thresholds";
+import { buildFallbackSolutions } from "../services/fallback";
 import { generateSolutions } from "../services/interpreter";
 import { fetchAllSignals } from "../services/orchestrate";
 import { computeAlertLevel } from "./alert";
@@ -8,6 +9,7 @@ import {
   NdviData,
   RainfallData,
   SoilMoistureData,
+  SolutionsInterpretation,
   SolutionsRequestBody
 } from "../types";
 
@@ -44,11 +46,6 @@ router.post("/api/solutions", async (req, res) => {
   const language = body.language.toLowerCase();
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({
-      error: "Solutions generator unavailable (GEMINI_API_KEY not configured)."
-    });
-  }
 
   let soilMoisture: SoilMoistureData | null = null;
   let rainfall: RainfallData | null = null;
@@ -78,31 +75,52 @@ router.post("/api/solutions", async (req, res) => {
     alertLevel = computeAlertLevel(soilMoisture, rainfall, ndvi);
   }
 
-  let solutions;
-  try {
-    solutions = await generateSolutions(
-      apiKey,
-      latitude,
-      longitude,
-      alertLevel,
-      body.crop_type,
-      language,
-      soilMoisture,
-      rainfall,
-      ndvi
-    );
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.warn("solutions generation failed:", err);
+  let solutions: SolutionsInterpretation = buildFallbackSolutions(
+    alertLevel,
+    body.crop_type,
+    language,
+    soilMoisture,
+    rainfall,
+    ndvi,
+    apiKey ? undefined : "GEMINI_API_KEY not configured"
+  );
+
+  if (apiKey) {
+    try {
+      solutions = await generateSolutions(
+        apiKey,
+        latitude,
+        longitude,
+        alertLevel,
+        body.crop_type,
+        language,
+        soilMoisture,
+        rainfall,
+        ndvi
+      );
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn("solutions generation failed:", err);
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      const isQuota = /429|quota|rate.?limit/i.test(message);
+      const isOverloaded = /503|overloaded|unavailable|high demand/i.test(message);
+      const reason = isQuota
+        ? "Gemini API quota exhausted on all fallback models"
+        : isOverloaded
+          ? "Gemini API overloaded on all fallback models"
+          : "Gemini API error";
+      solutions = buildFallbackSolutions(
+        alertLevel,
+        body.crop_type,
+        language,
+        soilMoisture,
+        rainfall,
+        ndvi,
+        reason
+      );
     }
-    const message = err instanceof Error ? err.message : String(err);
-    const isQuota = /429|quota|rate.?limit/i.test(message);
-    return res.status(503).json({
-      error: isQuota
-        ? "Gemini API quota exceeded for this key (free tier: limit 0 on the requested model). Enable billing on the Google AI Studio project, rotate the GEMINI_API_KEY, or wait for the daily quota to reset."
-        : "Solutions generator temporarily unavailable."
-    });
   }
 
   const dataPartial = !soilMoisture || !rainfall || !ndvi;

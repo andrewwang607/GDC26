@@ -9,22 +9,31 @@ import {
 } from "../types";
 
 const MODEL_CHAIN = [
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash-lite",
+  "gemini-flash-lite-latest",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b"
+  "gemini-flash-latest"
 ];
+
+const FALLBACK_STATUSES = new Set([404, 429, 500, 502, 503, 504]);
 
 interface GeminiCallResult {
   text: string;
   model: string;
 }
 
-function isQuotaError(err: unknown): boolean {
+function shouldFallback(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as { status?: number; message?: string };
-  if (e.status === 429) return true;
-  return typeof e.message === "string" && /429|quota|rate.?limit/i.test(e.message);
+  if (typeof e.status === "number" && FALLBACK_STATUSES.has(e.status)) return true;
+  if (typeof e.message === "string") {
+    return /\b(?:429|500|502|503|504|quota|overloaded|unavailable|high demand|not found|rate.?limit)\b/i.test(
+      e.message
+    );
+  }
+  return false;
 }
 
 async function callGemini(
@@ -34,7 +43,9 @@ async function callGemini(
 ): Promise<GeminiCallResult> {
   const genAI = new GoogleGenerativeAI(apiKey);
   let lastError: unknown = null;
+  const attempted: string[] = [];
   for (const modelName of MODEL_CHAIN) {
+    attempted.push(modelName);
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -44,15 +55,13 @@ async function callGemini(
       return { text: result.response.text(), model: modelName };
     } catch (err) {
       lastError = err;
-      if (!isQuotaError(err)) {
+      if (!shouldFallback(err)) {
         throw err;
       }
     }
   }
-  if (lastError instanceof Error) {
-    throw new Error(`All Gemini models exhausted quota: ${lastError.message}`);
-  }
-  throw new Error("All Gemini models exhausted quota");
+  const lastMessage = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`All Gemini models failed (${attempted.join(", ")}): ${lastMessage}`);
 }
 
 function buildPrompt(

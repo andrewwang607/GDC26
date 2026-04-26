@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ALERT_LEVEL_THRESHOLDS, SUPPORTED_LANGUAGES } from "../config/thresholds";
+import { buildFallbackAdvisory } from "../services/fallback";
 import { interpretAlert } from "../services/interpreter";
 import { fetchAllSignals } from "../services/orchestrate";
 import {
@@ -114,13 +115,17 @@ router.post("/api/alert", async (req, res) => {
 
   const alertLevel = computeAlertLevel(soilMoisture, rainfall, ndvi);
 
-  let alert = {
-    english_summary: "Limited data available for advisory generation.",
-    local_language_guidance: "",
-    recommended_actions: [] as string[]
-  };
-
   const apiKey = process.env.GEMINI_API_KEY;
+  let alert = buildFallbackAdvisory(
+    alertLevel,
+    body.crop_type,
+    language,
+    soilMoisture,
+    rainfall,
+    ndvi,
+    apiKey ? undefined : "GEMINI_API_KEY not configured"
+  );
+
   if (apiKey) {
     try {
       alert = await interpretAlert(
@@ -139,13 +144,21 @@ router.post("/api/alert", async (req, res) => {
       }
       const message = err instanceof Error ? err.message : String(err);
       const isQuota = /429|quota|rate.?limit/i.test(message);
-      alert = {
-        english_summary: isQuota
-          ? "Advisory model unavailable: Gemini API quota exceeded for this key. Enable billing on the Google AI Studio project, rotate the key, or wait for the daily quota to reset."
-          : "Advisory model temporarily unavailable.",
-        local_language_guidance: "",
-        recommended_actions: []
-      };
+      const isOverloaded = /503|overloaded|unavailable|high demand/i.test(message);
+      const reason = isQuota
+        ? "Gemini API quota exhausted on all fallback models"
+        : isOverloaded
+          ? "Gemini API overloaded on all fallback models"
+          : "Gemini API error";
+      alert = buildFallbackAdvisory(
+        alertLevel,
+        body.crop_type,
+        language,
+        soilMoisture,
+        rainfall,
+        ndvi,
+        reason
+      );
     }
   }
 
