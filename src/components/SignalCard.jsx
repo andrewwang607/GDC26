@@ -1,7 +1,7 @@
 const SIGNAL_META = {
   soil_moisture: { label: 'Soil Moisture', icon: 'water_drop', unit: 'm³/m³' },
   rainfall: { label: 'Rainfall', icon: 'rainy', unit: 'mm' },
-  ndvi: { label: 'Vegetation Health', icon: 'nature', unit: 'NDVI' },
+  ndvi: { label: 'Vegetation Health', icon: 'nature', unit: 'Index' },
 }
 
 const LEVEL_STYLES = {
