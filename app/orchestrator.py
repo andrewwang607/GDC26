@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, wait
 from datetime import date, timedelta
 from typing import Any, Callable
 
@@ -17,11 +17,18 @@ from app.models import (
 from app.services import climateserv as cs
 from app.services.gemini import GeminiError, generate_advice
 
-# ESI lags ~10 months and LIS soil moisture ~7 months on ClimateSERV (verified 2025-04).
-# If a fetch returns no valid data for the requested window, we shift the window
-# back in FALLBACK_STEP_DAYS increments up to FALLBACK_MAX_SHIFTS times.
+# ClimateSERV can be both slow and stale for some datasets. To keep the API
+# responsive enough for the dashboard, we pre-shift lagging datasets backward
+# and enforce an overall fetch budget so partial data can still be returned.
 FALLBACK_STEP_DAYS = 90
-FALLBACK_MAX_SHIFTS = 5
+ANALYSIS_FETCH_BUDGET_S = 35
+ADVICE_TIMEOUT_S = 12
+
+DATASET_FETCH_CONFIG: dict[str, dict[str, Any]] = {
+    "rainfall": {"fn": cs.fetch_chirps, "lag_days": 0, "max_shifts": 0},
+    "ndvi": {"fn": cs.fetch_esi, "lag_days": 365, "max_shifts": 4},
+    "soil_moisture": {"fn": cs.fetch_soil_moisture, "lag_days": 365, "max_shifts": 4},
+}
 
 
 FetchFn = Callable[[float, float, date, date], list[dict[str, Any]]]
@@ -33,10 +40,12 @@ def _fetch_with_fallback(
     lon: float,
     start: date,
     end: date,
+    lag_days: int = 0,
+    max_shifts: int = 0,
 ) -> list[dict[str, Any]]:
     """Fetch a dataset, shifting the window backward until data is returned."""
-    for shift in range(FALLBACK_MAX_SHIFTS + 1):
-        offset = timedelta(days=shift * FALLBACK_STEP_DAYS)
+    for shift in range(max_shifts + 1):
+        offset = timedelta(days=lag_days + shift * FALLBACK_STEP_DAYS)
         rows = fn(lat, lon, start - offset, end - offset)
         valid = [r for r in rows if r.get("NaN", 100) < 50]
         if valid:
@@ -80,29 +89,77 @@ def _summarize(rows: list[dict[str, Any]]) -> DatasetSummary:
     )
 
 
+def _build_fallback_advice(data: DataBlock, reason: str | None = None) -> Advice:
+    sample_count = (
+        data.rainfall.sample_count
+        + data.ndvi.sample_count
+        + data.soil_moisture.sample_count
+    )
+    if sample_count == 0:
+        summary = (
+            "Live environmental datasets were unavailable before the request deadline. "
+            "The dashboard returned without satellite metrics so you can retry quickly."
+        )
+        recommendations = [
+            "Retry in a few minutes when external data services are less busy.",
+            "Use demo mode or cached field observations if you need a quick preview now.",
+        ]
+        risk_level = "unknown"
+    else:
+        summary = (
+            "Some live datasets were delayed, so this response uses the partial satellite data "
+            "that arrived within the request budget."
+        )
+        recommendations = [
+            "Treat missing metrics as unavailable rather than normal conditions.",
+            "Retry later to refresh the full rainfall, soil moisture, and vegetation picture.",
+        ]
+        risk_level = "moderate"
+
+    if reason:
+        summary = f"{summary} {reason}"
+
+    return Advice(
+        risk_level=risk_level,
+        summary=summary,
+        recommendations=recommendations,
+    )
+
+
 def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
     end = date.today()
     start = end - timedelta(days=req.days)
 
-    # Fire all three ClimateSERV fetches concurrently (requests is sync → threadpool).
-    fetches: dict[str, tuple[FetchFn, float, float, date, date]] = {
-        "rainfall": (cs.fetch_chirps, req.lat, req.lon, start, end),
-        "ndvi": (cs.fetch_esi, req.lat, req.lon, start, end),
-        "soil_moisture": (cs.fetch_soil_moisture, req.lat, req.lon, start, end),
-    }
     raw: dict[str, list[dict[str, Any]]] = {}
-
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    pool = ThreadPoolExecutor(max_workers=3)
+    try:
         futures = {
-            pool.submit(_fetch_with_fallback, fn, lat, lon, s, e): key
-            for key, (fn, lat, lon, s, e) in fetches.items()
+            pool.submit(
+                _fetch_with_fallback,
+                config["fn"],
+                req.lat,
+                req.lon,
+                start,
+                end,
+                config["lag_days"],
+                config["max_shifts"],
+            ): key
+            for key, config in DATASET_FETCH_CONFIG.items()
         }
-        for future in as_completed(futures):
+        done, pending = wait(futures, timeout=ANALYSIS_FETCH_BUDGET_S)
+
+        for future in done:
             key = futures[future]
             try:
                 raw[key] = future.result()
             except cs.ClimateServError:
                 raw[key] = []
+
+        for future in pending:
+            raw[futures[future]] = []
+            future.cancel()
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
     data = DataBlock(
         rainfall=_summarize(raw.get("rainfall", [])),
@@ -118,19 +175,26 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
         "soil_moisture": data.soil_moisture.model_dump(),
     }
 
-    try:
-        advice_raw = generate_advice(location_d, period_d, datasets_d)
-        advice = Advice(
-            risk_level=advice_raw.get("risk_level", "unknown"),
-            summary=advice_raw.get("summary", ""),
-            recommendations=advice_raw.get("recommendations", []),
-        )
-    except GeminiError as e:
-        advice = Advice(
-            risk_level="unknown",
-            summary=f"AI advice unavailable: {e}",
-            recommendations=[],
-        )
+    if (
+        data.rainfall.sample_count == 0
+        and data.ndvi.sample_count == 0
+        and data.soil_moisture.sample_count == 0
+    ):
+        advice = _build_fallback_advice(data)
+    else:
+        try:
+            with ThreadPoolExecutor(max_workers=1) as advice_pool:
+                future = advice_pool.submit(generate_advice, location_d, period_d, datasets_d)
+                advice_raw = future.result(timeout=ADVICE_TIMEOUT_S)
+            advice = Advice(
+                risk_level=advice_raw.get("risk_level", "unknown"),
+                summary=advice_raw.get("summary", ""),
+                recommendations=advice_raw.get("recommendations", []),
+            )
+        except FuturesTimeoutError:
+            advice = _build_fallback_advice(data, "AI advice timed out.")
+        except GeminiError as e:
+            advice = _build_fallback_advice(data, f"AI advice unavailable: {e}")
 
     return AnalyzeResponse(
         location=Location(lat=req.lat, lon=req.lon),

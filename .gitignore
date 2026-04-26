@@ -11,3 +11,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+node_modules/
+.vite/
+.playwright-mcp/
+*.zip

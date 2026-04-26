@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#f5ede4",
+                        "on-surface": "#1e1b16",
+                        "on-tertiary-fixed-variant": "#004786",
+                        "surface-variant": "#e9e1d8",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e9e1d8",
+                        "on-background": "#1e1b16",
+                        "secondary-fixed": "#ffdad4",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#001c3a",
+                        "primary-fixed": "#ffdea5",
+                        "surface": "#fff8f3",
+                        "surface-container-low": "#fbf2e9",
+                        "on-secondary-fixed-variant": "#5b403c",
+                        "secondary-fixed-dim": "#e3beb8",
+                        "inverse-on-surface": "#f8efe6",
+                        "tertiary": "#005faf",
+                        "on-primary-fixed": "#261900",
+                        "surface-dim": "#e1d9d0",
+                        "tertiary-container": "#65a7ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#4e3700",
+                        "inverse-primary": "#e9c176",
+                        "on-primary-fixed-variant": "#5d4201",
+                        "secondary": "#745853",
+                        "surface-container-high": "#efe7de",
+                        "secondary-container": "#fed7d0",
+                        "inverse-surface": "#34302a",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#775a19",
+                        "outline-variant": "#d1c5b4",
+                        "error": "#ba1a1a",
+                        "outline": "#7f7667",
+                        "background": "#fff8f3",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#fff8f3",
+                        "primary-fixed-dim": "#e9c176",
+                        "tertiary-fixed-dim": "#a5c8ff",
+                        "on-secondary-fixed": "#2b1613",
+                        "on-tertiary-container": "#003b71",
+                        "tertiary-fixed": "#d4e3ff",
+                        "on-surface-variant": "#4e4639",
+                        "on-secondary-container": "#795c57",
+                        "primary": "#775a19",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#c5a059"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "lg": "48px",
+                        "margin": "32px",
+                        "sm": "16px",
+                        "max_width": "1440px",
+                        "gutter": "24px",
+                        "xs": "8px",
+                        "md": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "body-lg": ["Manrope"],
+                        "headline-xl": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-md": ["Manrope"],
+                        "label-bold": ["Manrope"],
+                        "label-sm": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-bold": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #fff8f3;
+            color: #1e1b16;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-[#FAF7F2] dark:bg-[#1A1814] border-b border-[#3E2723]/10 dark:border-[#FAF7F2]/10 shadow-sm sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#C5A059] dark:text-[#D4B57E]" data-icon="monitoring">monitoring</span>
+<span class="font-['Space_Grotesk'] text-2xl font-bold text-[#3E2723] dark:text-[#FAF7F2]">DroughtWatch</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-['Space_Grotesk'] text-[#C5A059] border-b-2 border-[#C5A059] pb-1 tracking-tight font-medium" href="#">Platform</a>
+<a class="font-['Space_Grotesk'] text-[#3E2723] dark:text-[#FAF7F2] opacity-80 hover:text-[#C5A059] hover:opacity-100 transition-all duration-200 tracking-tight font-medium" href="#">Global Map</a>
+<a class="font-['Space_Grotesk'] text-[#3E2723] dark:text-[#FAF7F2] opacity-80 hover:text-[#C5A059] hover:opacity-100 transition-all duration-200 tracking-tight font-medium" href="#">Risk Analysis</a>
+</nav>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded font-label-bold active:scale-95 transition-transform">
+                Get Started
+            </button>
+</div>
+</header>
+<main class="flex-grow max-w-7xl mx-auto w-full px-6 py-lg">
+<!-- Dashboard Header -->
+<div class="mb-lg">
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Your Agricultural Risk Dashboard</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Real-time environmental surveillance and predictive modeling for the Sahel region.</p>
+</div>
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Sidebar: Location & Search -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-md">
+<!-- Search Section -->
+<section class="bg-surface-container-lowest p-sm border border-outline-variant shadow-sm rounded-xl">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-surface border border-outline-variant focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none rounded-lg font-body-md text-on-surface placeholder:text-outline-variant" placeholder="Search crop type (wheat, maize...)" type="text"/>
+</div>
+<!-- Autocomplete Dropdown Mockup -->
+<div class="mt-xs border border-outline-variant rounded bg-surface divide-y divide-outline-variant/10">
+<div class="px-4 py-2 hover:bg-surface-container cursor-pointer flex justify-between items-center">
+<span class="font-body-md text-on-surface">Maize</span>
+<span class="text-label-sm text-outline px-2 py-0.5 bg-surface-variant rounded">Cereal</span>
+</div>
+<div class="px-4 py-2 hover:bg-surface-container cursor-pointer flex justify-between items-center">
+<span class="font-body-md text-on-surface">Wheat</span>
+<span class="text-label-sm text-outline px-2 py-0.5 bg-surface-variant rounded">Cereal</span>
+</div>
+<div class="px-4 py-2 hover:bg-surface-container cursor-pointer flex justify-between items-center">
+<span class="font-body-md text-on-surface">Sorghum</span>
+<span class="text-label-sm text-outline px-2 py-0.5 bg-surface-variant rounded">Drought Resistant</span>
+</div>
+</div>
+</section>
+<!-- Location Card -->
+<section class="bg-surface border border-outline-variant shadow-sm rounded-xl overflow-hidden">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="Satellite map view of Sahel region Mali with golden desert sands and sparse green patches" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8GYpO6wA0MDxXKLLgAwvJj2ebkxPlqu1NjJNgnwjolWDh7sF4p8Agz8WQuP3hoo-06LoedcZQKr2iqTEdm-nA2Ny__R2wt1OzUkby4UslmQuzZqgGfNfKFSfbSST5oDcxXJHd8hs7wjd_vXnT37dGeP6M_YQR-W95hoZTeKirhp_eC-zOmoR1uPqGOg4vHWgMwmDOG0qvo0Aax9SlAKP2UUJaZgYpOdptvkZ4y96u-SKWamUeJIxPmWmXzdP9ywSyDIFRmQELfNk"/>
+<div class="absolute inset-0 bg-black/10 flex items-center justify-center">
+<div class="bg-primary p-2 rounded-full shadow-lg">
+<span class="material-symbols-outlined text-white" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+</div>
+<div class="p-md space-y-4">
+<div>
+<p class="text-label-sm text-outline uppercase tracking-wider mb-1">Current Location</p>
+<p class="font-headline-md text-on-surface">Sahel Region, Mali</p>
+</div>
+<div class="flex justify-between items-center py-2 border-y border-outline-variant/30">
+<span class="text-body-md text-on-surface-variant">Climate Zone</span>
+<span class="font-label-bold text-on-surface">Arid / Semi-Arid</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-md text-on-surface-variant">Risk Level</span>
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-label-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="warning">warning</span>
+                                HIGH
+                            </span>
+</div>
+</div>
+</section>
+<!-- Soil Metric Teaser -->
+<div class="bg-primary/5 p-md border border-primary/10 rounded-xl">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="water_drop">water_drop</span>
+<span class="font-label-bold text-primary">Water Reserve</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[28%] rounded-full shadow-[0_0_8px_rgba(0,95,175,0.4)]"></div>
+</div>
+<p class="mt-2 text-label-sm text-on-surface-variant">Critical: 28% capacity remaining</p>
+</div>
+</div>
+<!-- Main Map Visualization -->
+<div class="col-span-12 lg:col-span-8">
+<section class="bg-surface-container border border-outline-variant shadow-sm rounded-xl overflow-hidden h-[700px] flex flex-col">
+<!-- Map Controls Toolbar -->
+<div class="bg-surface border-b border-outline-variant p-4 flex flex-wrap items-center justify-between gap-4">
+<div class="flex gap-2">
+<button class="bg-surface-container-high border border-outline-variant px-4 py-2 rounded-lg flex items-center gap-2 font-label-bold text-on-surface active:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="layers">layers</span>
+                                2D View
+                            </button>
+<button class="bg-surface border border-outline-variant px-4 py-2 rounded-lg flex items-center gap-2 font-label-bold text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="3d_rotation">3d_rotation</span>
+                                Terrain
+                            </button>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-bold text-on-surface">Soil Moisture</span>
+<div class="w-10 h-5 bg-tertiary rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-bold text-on-surface">Rainfall Anomaly</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-bold text-on-surface">Vegetation</span>
+<div class="w-10 h-5 bg-surface-variant rounded-full relative cursor-pointer border border-outline-variant">
+<div class="absolute left-1 top-1 w-3 h-3 bg-outline rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive Map Area -->
+<div class="flex-grow relative bg-[#E0D8C8]">
+<!-- Placeholder for Interactive Map -->
+<div class="absolute inset-0" data-location="Mali" style="">
+<img class="w-full h-full object-cover mix-blend-multiply opacity-80" data-alt="Topographic satellite map of African drylands with specialized heat map overlays in blue, red, and orange representing moisture levels" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgy0GoFDFi9D6QC33ZVqVNqsdhclEd-yq3zo77bkD5CIw4us81U5A_JuS_45upeBsbW7VOW9pgve9UALOi2q1X19xi86h3renYKTjfetfvxeU9a9EX1_fHunwIwmYeFfThSpMTQeiTCd69-zW5IkdHy8p_44ClI-_R6TLvbw4pul48bQ2dtZNpTCuYmi_IW-zNU5Ci4WUHCV0E62xENkMSVDLul7G8dVBJOuGAMuHzimMiUY4sXS_ljdvxdfSwYQIfBya06fJYug4"/>
+</div>
+<!-- Legend Overlay -->
+<div class="absolute bottom-6 left-6 bg-surface/90 backdrop-blur-md p-4 rounded-xl border border-outline-variant shadow-xl max-w-[240px]">
+<p class="font-label-bold text-on-surface mb-3">Map Intensity Legend</p>
+<div class="space-y-2">
+<div class="flex items-center gap-3">
+<div class="w-full h-2 bg-gradient-to-r from-white via-tertiary-container to-tertiary rounded-full"></div>
+<span class="text-label-sm text-outline whitespace-nowrap">Moisture</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-full h-2 bg-gradient-to-r from-[#FAF7F2] via-primary-container to-primary rounded-full"></div>
+<span class="text-label-sm text-outline whitespace-nowrap">Drought</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-full h-2 bg-gradient-to-r from-surface-variant via-green-200 to-green-600 rounded-full"></div>
+<span class="text-label-sm text-outline whitespace-nowrap">Vegetation</span>
+</div>
+</div>
+</div>
+<!-- Hotspot Marker -->
+<div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+<div class="relative flex items-center justify-center">
+<div class="absolute w-12 h-12 bg-primary/30 rounded-full animate-ping"></div>
+<div class="w-4 h-4 bg-primary rounded-full border-2 border-white shadow-lg"></div>
+</div>
+<div class="absolute top-8 left-1/2 -translate-x-1/2 bg-surface p-3 rounded shadow-xl border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+<p class="text-label-bold text-on-surface">Critical Zone: Mopti</p>
+<p class="text-label-sm text-error">Severe Water Deficit</p>
+</div>
+</div>
+<!-- Zoom Controls -->
+<div class="absolute right-6 top-6 flex flex-col gap-2">
+<button class="w-10 h-10 bg-surface border border-outline-variant rounded shadow-md flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<button class="w-10 h-10 bg-surface border border-outline-variant rounded shadow-md flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<button class="w-10 h-10 bg-surface border border-outline-variant rounded shadow-md flex items-center justify-center hover:bg-surface-container transition-colors mt-2">
+<span class="material-symbols-outlined" data-icon="my_location">my_location</span>
+</button>
+</div>
+</div>
+<!-- Map Footer Data -->
+<div class="bg-surface-container-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
+<div class="flex items-center gap-8">
+<div>
+<span class="text-label-sm text-outline block">Resolution</span>
+<span class="font-label-bold text-on-surface">1.2m Satellite</span>
+</div>
+<div>
+<span class="text-label-sm text-outline block">Last Updated</span>
+<span class="font-label-bold text-on-surface">4m ago</span>
+</div>
+</div>
+<button class="flex items-center gap-2 text-primary font-label-bold hover:underline">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+                            Export GIS Data
+                        </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-[#3E2723] dark:bg-[#0D0C0A] border-t border-white/5 mt-auto">
+<div class="max-w-7xl mx-auto px-8 py-16 flex flex-col md:flex-row justify-between items-center gap-8 w-full">
+<div class="flex flex-col gap-4 text-center md:text-left">
+<span class="font-['Space_Grotesk'] text-xl font-bold text-[#FAF7F2]">DroughtWatch</span>
+<p class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60">© 2024 DroughtWatch AI. Guardian of agricultural stewardship.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-x-8 gap-y-4">
+<a class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60 hover:text-[#FAF7F2] transition-colors duration-300" href="#">Platform</a>
+<a class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60 hover:text-[#FAF7F2] transition-colors duration-300" href="#">Global Map</a>
+<a class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60 hover:text-[#FAF7F2] transition-colors duration-300" href="#">Risk Analysis</a>
+<a class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60 hover:text-[#FAF7F2] transition-colors duration-300" href="#">Contact Support</a>
+<a class="font-['Space_Grotesk'] text-sm antialiased text-[#FAF7F2]/60 hover:text-[#FAF7F2] transition-colors duration-300" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</body></html>
